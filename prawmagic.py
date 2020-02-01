@@ -7,7 +7,7 @@ def speed_up():
 # use exponentially decaying rate limiting to enhance burst performance
 def _modify_rate_limit():
     from prawcore.rate_limit import RateLimiter
-    import time
+    from time import time
 
     if not hasattr(RateLimiter, "update_without_mod"):
         RateLimiter.update_without_mod = RateLimiter.update
@@ -15,7 +15,7 @@ def _modify_rate_limit():
     def update_with_mod(self, response_headers):
         RateLimiter.update_without_mod(self, response_headers)
         if self.next_request_timestamp != self.reset_timestamp:
-            now = time.time()
+            now = time()
             delta = self.next_request_timestamp - now
             self.next_request_timestamp = now + delta / FETCHES
 
@@ -36,12 +36,13 @@ def _use_prefetch():
 
     def info_with_prefetch(self, fullnames=None, url=None):
         def info_generator(self, fullnames):
-            with ThreadPoolExecutor() as e:
+            with ThreadPoolExecutor() as executor:
                 queue = Queue(FETCHES)
-                e.submit(lambda: from_iterable(fullnames).pipe(
+                executor.submit(lambda: from_iterable(fullnames).pipe(
                     buffer_with_count(100),
                     map(lambda chunk: {"id": ",".join(chunk)}),
-                    map(lambda params: e.submit(lambda: self.get(API_PATH["info"], params=params))),
+                    map(lambda params: lambda: self.get(API_PATH["info"], params=params)),
+                    map(lambda task: executor.submit(task)),
                     map(lambda future: queue.put(future)),
                     finally_action(lambda: queue.put(None))
                 ).subscribe())
