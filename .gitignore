@@ -1,4 +1,6 @@
 __pycache__/
+.gitattributes
 .ipynb_checkpoints/
-
-
+.mypy_cache/
+.vscode/
+reddit_data.code-workspace

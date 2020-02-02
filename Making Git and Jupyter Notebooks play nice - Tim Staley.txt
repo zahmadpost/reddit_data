@@ -1,1 +1,0 @@
-http://timstaley.co.uk/posts/making-git-and-jupyter-notebooks-play-nice/
